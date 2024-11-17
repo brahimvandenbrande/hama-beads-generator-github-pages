@@ -206,10 +206,52 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleError(error) {
-        console.error(error);
-        announceToScreenReader(`Error: ${error.message}`);
-        // Show error state in UI
-        showErrorMessage(error.message);
+        console.error('Error:', error);
+        updateLoadingState(false);
+        announceToScreenReader('Error processing image: ' + error.message);
+    }
+
+    // Update color count display
+    function updateColorCount(colorCounts) {
+        const colorCountList = document.getElementById('colorCountList');
+        colorCountList.innerHTML = ''; // Clear existing content
+        
+        // Sort colors by count in descending order
+        const sortedColors = Object.entries(colorCounts)
+            .sort(([, a], [, b]) => b - a);
+
+        sortedColors.forEach(([colorName, count]) => {
+            const color = HAMA_COLORS.find(c => c.name === colorName);
+            if (!color) return;
+
+            const listItem = document.createElement('li');
+            listItem.className = 'flex items-center justify-between p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200';
+            
+            const colorSwatch = document.createElement('div');
+            colorSwatch.className = 'flex items-center gap-2';
+            
+            const swatch = document.createElement('div');
+            swatch.className = 'w-6 h-6 rounded border border-gray-300 dark:border-gray-600';
+            swatch.style.backgroundColor = `rgb(${color.r}, ${color.g}, ${color.b})`;
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = colorName;
+            nameSpan.className = 'text-sm text-gray-700 dark:text-gray-300';
+            
+            const countSpan = document.createElement('span');
+            countSpan.textContent = count;
+            countSpan.className = 'text-sm font-light text-gray-600 dark:text-gray-400';
+            
+            colorSwatch.appendChild(swatch);
+            colorSwatch.appendChild(nameSpan);
+            listItem.appendChild(colorSwatch);
+            listItem.appendChild(countSpan);
+            colorCountList.appendChild(listItem);
+        });
+
+        // Announce color count to screen readers
+        const totalColors = sortedColors.length;
+        announceToScreenReader(`Image processed with ${totalColors} different colors`);
     }
 
     // Theme toggle functionality
