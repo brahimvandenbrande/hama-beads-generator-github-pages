@@ -105,25 +105,26 @@
             </div>
 
             <!-- Preview Area -->
-            <div class="col-span-9 grid grid-cols-2 gap-6 h-full">
-                <div class="bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg p-6 transition-colors duration-200">
+            <div class="col-span-9 grid grid-cols-2 gap-6">
+                <!-- Original Image Preview -->
+                <div class="bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg p-6 transition-colors duration-200 flex flex-col">
                     <h3 id="original-image-heading" class="text-lg font-bold mb-4 text-white">Original Image</h3>
                     <div 
                         id="originalPreview" 
-                        class="w-full h-[calc(100vh-200px)] bg-gray-700 rounded-lg flex items-center justify-center transition-colors duration-200"
-                        role="img"
+                        class="flex-1 bg-gray-700 rounded-lg flex items-center justify-center transition-colors duration-200 min-h-[200px] relative"
+                        role="img" 
                         aria-labelledby="original-image-heading">
-                        <p class="text-gray-400">Upload or generate an image</p>
                     </div>
                 </div>
-                <div class="bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg p-6 transition-colors duration-200">
+
+                <!-- Bead Pattern Preview -->
+                <div class="bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg p-6 transition-colors duration-200 flex flex-col">
                     <h3 id="bead-pattern-heading" class="text-lg font-bold mb-4 text-white">Bead Pattern</h3>
                     <div 
                         id="beadPreview" 
-                        class="w-full h-[calc(100vh-200px)] bg-gray-700 rounded-lg flex items-center justify-center transition-colors duration-200"
-                        role="img"
+                        class="flex-1 bg-gray-700 rounded-lg flex items-center justify-center transition-colors duration-200 min-h-[200px] relative"
+                        role="img" 
                         aria-labelledby="bead-pattern-heading">
-                        <p class="text-gray-400">Pattern will appear here</p>
                     </div>
                 </div>
             </div>

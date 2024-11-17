@@ -92,6 +92,25 @@ document.addEventListener('DOMContentLoaded', () => {
             updateLoadingState(true);
             announceToScreenReader('Processing image, please wait...');
 
+            // Display original image
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.className = 'max-w-full max-h-full object-contain rounded-lg';
+            img.alt = 'Original uploaded image';
+            img.style.opacity = '0';
+            
+            const container = document.getElementById('originalPreview');
+            container.innerHTML = '';
+            container.appendChild(img);
+            
+            // Animate image appearance
+            gsap.to(img, {
+                opacity: 1,
+                duration: 0.5,
+                ease: "power2.out"
+            });
+
+            // Process the image
             const { width, height } = getBoardDimensions();
             const result = await imageProcessor.processImage(
                 file,
@@ -100,28 +119,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 colorReduction.value
             );
 
-            // Display original image
-            const originalImg = document.createElement('img');
-            originalImg.src = URL.createObjectURL(file);
-            originalImg.className = 'w-full h-full object-contain rounded-lg';
-            originalImg.alt = 'Original uploaded image';
-            originalPreview.innerHTML = '';
-            originalPreview.appendChild(originalImg);
-
             // Display processed image
-            const processedImg = document.createElement('img');
-            processedImg.src = result.canvas.toDataURL();
-            processedImg.className = 'w-full h-full object-contain rounded-lg';
-            processedImg.alt = 'Processed bead pattern';
+            const beadPreview = document.getElementById('beadPreview');
             beadPreview.innerHTML = '';
-            beadPreview.appendChild(processedImg);
+            result.canvas.className = 'max-w-full max-h-full object-contain rounded-lg';
+            result.canvas.style.opacity = '0';
+            beadPreview.appendChild(result.canvas);
+
+            // Animate processed image appearance
+            gsap.to(result.canvas, {
+                opacity: 1,
+                duration: 0.5,
+                ease: "power2.out"
+            });
 
             // Update color counts
             updateColorCount(result.colorCounts);
-            
-            // Animate elements
-            animateElement(originalImg);
-            animateElement(processedImg, 0.2);
             
             updateLoadingState(false);
             announceToScreenReader('Image processing complete');
@@ -254,31 +267,33 @@ document.addEventListener('DOMContentLoaded', () => {
         const colorCountList = document.getElementById('colorCountList');
         colorCountList.innerHTML = '';
         
-        Object.entries(colorCounts).forEach(([color, count]) => {
+        Object.entries(colorCounts).forEach(([colorName, count]) => {
             const colorItem = document.createElement('div');
             colorItem.className = 'flex items-center justify-between p-2 rounded-lg bg-gray-700/50';
             colorItem.setAttribute('role', 'listitem');
             
             const colorSwatch = document.createElement('div');
             colorSwatch.className = 'w-4 h-4 rounded-full mr-2 flex-shrink-0';
-            colorSwatch.style.backgroundColor = color;
-            colorSwatch.setAttribute('aria-label', `Color swatch for ${color}`);
+            // Get RGB values from HAMA_COLORS
+            const rgb = HAMA_COLORS[colorName];
+            colorSwatch.style.backgroundColor = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+            colorSwatch.setAttribute('aria-label', `Color swatch for ${colorName}`);
             
-            const colorName = document.createElement('div');
-            colorName.className = 'flex-1 text-gray-200 truncate mr-2';
-            colorName.textContent = color;
+            const colorName_el = document.createElement('div');
+            colorName_el.className = 'flex-1 text-gray-200 truncate mr-2';
+            colorName_el.textContent = colorName;
             
             const countText = document.createElement('div');
             countText.className = 'text-gray-300 text-right flex-shrink-0';
             countText.textContent = count;
             
             colorItem.appendChild(colorSwatch);
-            colorItem.appendChild(colorName);
+            colorItem.appendChild(colorName_el);
             colorItem.appendChild(countText);
             colorCountList.appendChild(colorItem);
             
             // Add tooltip for accessibility
-            colorItem.setAttribute('title', `${color}: ${count} beads`);
+            colorItem.setAttribute('title', `${colorName}: ${count} beads`);
         });
         
         announceToScreenReader('Color count updated');

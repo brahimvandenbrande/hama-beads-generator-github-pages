@@ -33,24 +33,24 @@ function rgbToLab(r, g, blue) {
     return [L, a, b];
 }
 
-// Fine-tuned Hama bead colors (adjusted for better real-world matching)
-const HAMA_COLORS = {
-    'White': [255, 255, 255],      // Pure white
-    'Cream': [238, 232, 215],      // Slightly warmer
-    'Yellow': [255, 215, 0],       // More vibrant
-    'Orange': [255, 102, 0],       // More saturated
-    'Red': [230, 40, 40],          // Slightly brighter
-    'Pink': [255, 155, 180],       // More saturated
-    'Purple': [147, 80, 158],      // Slightly more vibrant
-    'Blue': [45, 110, 200],        // More saturated
-    'Light Blue': [100, 180, 210], // Adjusted tone
-    'Green': [90, 170, 80],        // More natural
-    'Light Green': [150, 200, 120],// More distinct
-    'Brown': [139, 90, 60],        // Warmer tone
-    'Grey': [145, 145, 145],       // Neutral grey
-    'Black': [35, 35, 35],         // Rich black
-    'Clear': [230, 230, 230],      // Slightly darker
-    'Gold': [212, 175, 85],        // More metallic
+// Fine-tuned Hama bead colors (matched to actual Hama bead colors)
+window.HAMA_COLORS = {
+    'White': [255, 255, 255],        // H1 White
+    'Cream': [241, 231, 199],        // H43 Cream
+    'Yellow': [253, 227, 0],         // H17 Yellow
+    'Orange': [255, 128, 0],         // H38 Orange
+    'Red': [237, 28, 36],            // H20 Red
+    'Pink': [255, 182, 193],         // H29 Light Pink
+    'Purple': [146, 39, 143],        // H07 Purple
+    'Blue': [0, 105, 170],           // H08 Dark Blue
+    'Light Blue': [73, 151, 208],    // H46 Light Blue
+    'Green': [0, 146, 69],           // H10 Green
+    'Light Green': [120, 195, 82],   // H47 Pastel Green
+    'Brown': [129, 74, 42],          // H27 Brown
+    'Grey': [138, 141, 145],         // H21 Light Grey
+    'Black': [0, 0, 0],              // H18 Black
+    'Clear': [242, 242, 242],        // H01 Clear/Transparent
+    'Gold': [180, 133, 33],          // H62 Gold
 };
 
 class ColorMatcher {
@@ -58,7 +58,7 @@ class ColorMatcher {
         this.currentLevel = reductionLevel;
         // Pre-calculate LAB values for all colors
         this.labCache = {};
-        for (const [name, rgb] of Object.entries(HAMA_COLORS)) {
+        for (const [name, rgb] of Object.entries(window.HAMA_COLORS)) {
             this.labCache[name] = rgbToLab(...rgb);
         }
         // Strict thresholds for color matching
@@ -73,7 +73,7 @@ class ColorMatcher {
 
     setReductionLevel(level) {
         this.currentLevel = level;
-        const colors = Object.entries(HAMA_COLORS);
+        const colors = Object.entries(window.HAMA_COLORS);
         switch (level) {
             case 'high':
                 this.palette = Object.fromEntries(colors.slice(0, 8));
@@ -85,7 +85,7 @@ class ColorMatcher {
                 this.palette = Object.fromEntries(colors.slice(0, 16));
                 break;
             default:
-                this.palette = HAMA_COLORS;
+                this.palette = window.HAMA_COLORS;
         }
     }
 
@@ -122,14 +122,14 @@ class ColorMatcher {
             if (!closestColor) {
                 const brightness = (r * 299 + g * 587 + b * 114) / 1000;
                 closestColor = brightness > 128 
-                    ? { name: 'White', rgb: HAMA_COLORS['White'] }
-                    : { name: 'Black', rgb: HAMA_COLORS['Black'] };
+                    ? { name: 'White', rgb: window.HAMA_COLORS['White'] }
+                    : { name: 'Black', rgb: window.HAMA_COLORS['Black'] };
             }
 
             return closestColor;
         } catch (error) {
             console.error('Error finding closest color:', error);
-            return { name: 'White', rgb: HAMA_COLORS['White'] }; // Default fallback
+            return { name: 'White', rgb: window.HAMA_COLORS['White'] }; // Default fallback
         }
     }
 }
