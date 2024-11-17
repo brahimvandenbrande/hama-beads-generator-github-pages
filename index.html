@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Hama Bead Pattern Generator - Convert images into bead patterns with accessibility features">
+    <title>Hama Bead Pattern Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-gray-900 to-indigo-900 dark:from-gray-900 dark:to-indigo-900 text-gray-100 transition-colors duration-200 min-h-screen">
+    <div class="min-h-screen flex flex-col" role="application">
+        <!-- Skip to main content link for keyboard users -->
+        <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-indigo-600 text-white px-4 py-2 rounded-lg z-50">
+            Skip to main content
+        </a>
+
+        <!-- Header -->
+        <header class="bg-gray-800/90 dark:bg-gray-800/90 backdrop-blur-sm shadow-lg p-4 transition-colors duration-200" role="banner">
+            <div class="w-full px-6 flex justify-between items-center">
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
+                    Hama Bead Generator
+                </h1>
+                <div class="flex gap-4 items-center">
+                    <!-- Theme Toggle -->
+                    <button 
+                        id="themeToggle" 
+                        class="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-purple-400 transition-colors duration-200"
+                        aria-label="Toggle color theme"
+                        role="switch"
+                        aria-checked="true">
+                        <!-- Sun icon -->
+                        <svg class="w-6 h-6 hidden dark:block text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        <!-- Moon icon -->
+                        <svg class="w-6 h-6 block dark:hidden text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        </svg>
+                    </button>
+                    <button 
+                        id="randomImage" 
+                        class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:from-purple-700 focus:to-indigo-700 text-white px-4 py-2 rounded-lg shadow-md transform hover:scale-105 transition-all focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-purple-400 focus:outline-none"
+                        aria-label="Generate random image">
+                        Random Image
+                    </button>
+                    <input 
+                        type="file" 
+                        id="imageInput" 
+                        accept="image/*" 
+                        class="hidden" 
+                        aria-label="Upload image file">
+                    <button 
+                        onclick="document.getElementById('imageInput').click()" 
+                        class="bg-gray-700 hover:bg-gray-600 focus:bg-gray-600 text-white border border-gray-600 px-4 py-2 rounded-lg shadow-md transform hover:scale-105 transition-all focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-purple-400 focus:outline-none"
+                        aria-label="Open file upload dialog">
+                        Upload Image
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main id="main-content" class="flex-1 p-4 grid grid-cols-12 gap-6 overflow-hidden" role="main">
+            <!-- Settings Panel -->
+            <div class="col-span-2 bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg p-6 h-full transition-colors duration-200" role="complementary" aria-label="Settings panel">
+                <div class="space-y-6">
+                    <div role="group" aria-labelledby="board-size-label">
+                        <label id="board-size-label" class="block text-gray-200 text-sm font-bold mb-2">Board Size</label>
+                        <select 
+                            id="boardSize" 
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-400 focus:border-transparent text-white transition-colors duration-200"
+                            aria-describedby="board-size-description">
+                            <option value="29x29">Single Board (29x29)</option>
+                            <option value="58x29">Double Wide (58x29)</option>
+                            <option value="29x58">Double Tall (29x58)</option>
+                            <option value="58x58">Quad Board (58x58)</option>
+                            <option value="87x29">Triple Wide (87x29)</option>
+                            <option value="29x87">Triple Tall (29x87)</option>
+                            <option value="87x87">Nine Boards (87x87)</option>
+                        </select>
+                        <p id="board-size-description" class="text-sm text-gray-400 mt-1">Select the size of your Hama bead board</p>
+                    </div>
+
+                    <div role="group" aria-labelledby="color-reduction-label">
+                        <label id="color-reduction-label" class="block text-gray-200 text-sm font-bold mb-2">Color Reduction</label>
+                        <select 
+                            id="colorReduction" 
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-400 focus:border-transparent text-white transition-colors duration-200"
+                            aria-describedby="color-reduction-description">
+                            <option value="high">High (8 colors)</option>
+                            <option value="medium" selected>Medium (12 colors)</option>
+                            <option value="low">Low (16 colors)</option>
+                            <option value="none">None (All colors)</option>
+                        </select>
+                        <p id="color-reduction-description" class="text-sm text-gray-400 mt-1">Choose how many colors to use in the pattern</p>
+                    </div>
+
+                    <!-- Color Count -->
+                    <div role="region" aria-labelledby="bead-count-heading">
+                        <h3 id="bead-count-heading" class="text-lg font-bold mb-4 text-white">Bead Count</h3>
+                        <div id="colorCountList" class="space-y-2 max-h-[calc(100vh-400px)] overflow-y-auto pr-2" role="list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Area -->
+            <div class="col-span-10 grid grid-cols-2 gap-6 h-full">
+                <div class="bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg p-6 transition-colors duration-200">
+                    <h3 id="original-image-heading" class="text-lg font-bold mb-4 text-white">Original Image</h3>
+                    <div 
+                        id="originalPreview" 
+                        class="w-full h-[calc(100vh-200px)] bg-gray-700 rounded-lg flex items-center justify-center transition-colors duration-200"
+                        role="img"
+                        aria-labelledby="original-image-heading">
+                        <p class="text-gray-400">Upload or generate an image</p>
+                    </div>
+                </div>
+                <div class="bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg p-6 transition-colors duration-200">
+                    <h3 id="bead-pattern-heading" class="text-lg font-bold mb-4 text-white">Bead Pattern</h3>
+                    <div 
+                        id="beadPreview" 
+                        class="w-full h-[calc(100vh-200px)] bg-gray-700 rounded-lg flex items-center justify-center transition-colors duration-200"
+                        role="img"
+                        aria-labelledby="bead-pattern-heading">
+                        <p class="text-gray-400">Pattern will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Status messages for screen readers -->
+        <div role="status" aria-live="polite" class="sr-only" id="status-messages"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="js/colorMatcher.js"></script>
+    <script src="js/imageProcessor.js"></script>
+    <script src="js/ui.js"></script>
+</body>
+</html>

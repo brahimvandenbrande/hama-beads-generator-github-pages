@@ -1,0 +1,16 @@
+{
+  "name": "hama-beads-generator-github-pages",
+  "version": "1.0.0",
+  "description": "An enhanced version of the Hama bead pattern generator optimized for GitHub Pages deployment, featuring improved UI, accessibility, and animations.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "browser-sync start --server --files '*.html, css/*.css, js/*.js' --port 3000"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "browser-sync": "^2.29.3"
+  }
+}
