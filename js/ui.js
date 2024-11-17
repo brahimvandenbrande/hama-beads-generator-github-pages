@@ -212,96 +212,43 @@ document.addEventListener('DOMContentLoaded', () => {
         showErrorMessage(error.message);
     }
 
-    // Theme toggle functionality with accessibility
+    // Theme toggle functionality
     function initThemeToggle() {
         const themeToggleBtn = document.getElementById('themeToggle');
-        const html = document.documentElement;
-
-        // Default to dark mode
-        if (!localStorage.getItem('theme')) {
-            html.classList.add('dark');
-            localStorage.setItem('theme', 'dark');
+        
+        // Check if dark mode is enabled
+        function isDarkMode() {
+            return document.documentElement.classList.contains('dark');
         }
 
-        // Initialize button state
-        updateThemeToggleState();
+        // Update the UI to match the current theme
+        function updateTheme(darkMode) {
+            if (darkMode) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            localStorage.theme = darkMode ? 'dark' : 'light';
+            console.log('Theme updated:', darkMode ? 'dark' : 'light'); // Debug log
+        }
+
+        // Set initial theme
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            updateTheme(true);
+        } else {
+            updateTheme(false);
+        }
 
         // Toggle theme on button click
         themeToggleBtn.addEventListener('click', () => {
-            html.classList.toggle('dark');
-            const isDark = html.classList.contains('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            
-            // Update ARIA state
-            themeToggleBtn.setAttribute('aria-checked', isDark.toString());
-            announceToScreenReader(`Switched to ${isDark ? 'dark' : 'light'} mode`);
-
-            // Add animation
-            gsap.from(themeToggleBtn, {
-                rotate: 360,
-                duration: 0.6,
-                ease: "power2.out"
-            });
-
-            updateThemeToggleState();
-        });
-
-        // Handle keyboard navigation
-        themeToggleBtn.addEventListener('keydown', (e) => {
-            if (e.key === ' ' || e.key === 'Enter') {
-                e.preventDefault();
-                themeToggleBtn.click();
-            }
+            const newTheme = !isDarkMode();
+            updateTheme(newTheme);
+            console.log('Theme toggled:', newTheme ? 'dark' : 'light'); // Debug log
         });
     }
 
-    function updateThemeToggleState() {
-        const themeToggleBtn = document.getElementById('themeToggle');
-        const isDark = document.documentElement.classList.contains('dark');
-        themeToggleBtn.setAttribute('aria-checked', isDark.toString());
-        themeToggleBtn.setAttribute('aria-label', `Switch to ${isDark ? 'light' : 'dark'} mode`);
-    }
-
-    // Update color count display with accessibility
-    function updateColorCount(colorCounts) {
-        const colorCountList = document.getElementById('colorCountList');
-        colorCountList.innerHTML = '';
-        
-        Object.entries(colorCounts).forEach(([colorName, count]) => {
-            const colorItem = document.createElement('div');
-            colorItem.className = 'flex items-center justify-between p-2 rounded-lg bg-gray-700/50';
-            colorItem.setAttribute('role', 'listitem');
-            
-            const colorSwatch = document.createElement('div');
-            colorSwatch.className = 'w-4 h-4 rounded-full mr-2 flex-shrink-0';
-            // Get RGB values from HAMA_COLORS
-            const rgb = HAMA_COLORS[colorName];
-            colorSwatch.style.backgroundColor = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
-            colorSwatch.setAttribute('aria-label', `Color swatch for ${colorName}`);
-            
-            const colorName_el = document.createElement('div');
-            colorName_el.className = 'flex-1 text-gray-200 truncate mr-2';
-            colorName_el.textContent = colorName;
-            
-            const countText = document.createElement('div');
-            countText.className = 'text-gray-300 text-right flex-shrink-0';
-            countText.textContent = count;
-            
-            colorItem.appendChild(colorSwatch);
-            colorItem.appendChild(colorName_el);
-            colorItem.appendChild(countText);
-            colorCountList.appendChild(colorItem);
-            
-            // Add tooltip for accessibility
-            colorItem.setAttribute('title', `${colorName}: ${count} beads`);
-        });
-        
-        announceToScreenReader('Color count updated');
-    }
-
-    // Initialize UI with accessibility
     initThemeToggle();
-    
+
     // Add keyboard support for file input
     const fileButton = document.querySelector('button[onclick]');
     fileButton.addEventListener('keydown', (e) => {
