@@ -260,17 +260,25 @@ document.addEventListener('DOMContentLoaded', () => {
             colorItem.setAttribute('role', 'listitem');
             
             const colorSwatch = document.createElement('div');
-            colorSwatch.className = 'w-6 h-6 rounded-full mr-2';
+            colorSwatch.className = 'w-4 h-4 rounded-full mr-2 flex-shrink-0';
             colorSwatch.style.backgroundColor = color;
             colorSwatch.setAttribute('aria-label', `Color swatch for ${color}`);
             
-            const colorInfo = document.createElement('div');
-            colorInfo.className = 'flex-1 text-gray-200';
-            colorInfo.textContent = `${color}: ${count} beads`;
+            const colorName = document.createElement('div');
+            colorName.className = 'flex-1 text-gray-200 truncate mr-2';
+            colorName.textContent = color;
+            
+            const countText = document.createElement('div');
+            countText.className = 'text-gray-300 text-right flex-shrink-0';
+            countText.textContent = count;
             
             colorItem.appendChild(colorSwatch);
-            colorItem.appendChild(colorInfo);
+            colorItem.appendChild(colorName);
+            colorItem.appendChild(countText);
             colorCountList.appendChild(colorItem);
+            
+            // Add tooltip for accessibility
+            colorItem.setAttribute('title', `${color}: ${count} beads`);
         });
         
         announceToScreenReader('Color count updated');

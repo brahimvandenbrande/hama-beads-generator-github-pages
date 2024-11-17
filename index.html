@@ -63,21 +63,21 @@
         <!-- Main Content -->
         <main id="main-content" class="flex-1 p-4 grid grid-cols-12 gap-6 overflow-hidden" role="main">
             <!-- Settings Panel -->
-            <div class="col-span-2 bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg p-6 h-full transition-colors duration-200" role="complementary" aria-label="Settings panel">
+            <div class="col-span-3 bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg p-6 h-full transition-colors duration-200" role="complementary" aria-label="Settings panel">
                 <div class="space-y-6">
                     <div role="group" aria-labelledby="board-size-label">
                         <label id="board-size-label" class="block text-gray-200 text-sm font-bold mb-2">Board Size</label>
                         <select 
                             id="boardSize" 
-                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-400 focus:border-transparent text-white transition-colors duration-200"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-400 focus:border-transparent text-white transition-colors duration-200 text-base"
                             aria-describedby="board-size-description">
-                            <option value="29x29">Single Board (29x29)</option>
-                            <option value="58x29">Double Wide (58x29)</option>
-                            <option value="29x58">Double Tall (29x58)</option>
-                            <option value="58x58">Quad Board (58x58)</option>
-                            <option value="87x29">Triple Wide (87x29)</option>
-                            <option value="29x87">Triple Tall (29x87)</option>
-                            <option value="87x87">Nine Boards (87x87)</option>
+                            <option value="29x29">Single Board (29×29)</option>
+                            <option value="58x29">Double Wide (58×29)</option>
+                            <option value="29x58">Double Tall (29×58)</option>
+                            <option value="58x58">Quad Board (58×58)</option>
+                            <option value="87x29">Triple Wide (87×29)</option>
+                            <option value="29x87">Triple Tall (29×87)</option>
+                            <option value="87x87">Nine Boards (87×87)</option>
                         </select>
                         <p id="board-size-description" class="text-sm text-gray-400 mt-1">Select the size of your Hama bead board</p>
                     </div>
@@ -86,7 +86,7 @@
                         <label id="color-reduction-label" class="block text-gray-200 text-sm font-bold mb-2">Color Reduction</label>
                         <select 
                             id="colorReduction" 
-                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-400 focus:border-transparent text-white transition-colors duration-200"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-400 focus:border-transparent text-white transition-colors duration-200 text-base"
                             aria-describedby="color-reduction-description">
                             <option value="high">High (8 colors)</option>
                             <option value="medium" selected>Medium (12 colors)</option>
@@ -105,7 +105,7 @@
             </div>
 
             <!-- Preview Area -->
-            <div class="col-span-10 grid grid-cols-2 gap-6 h-full">
+            <div class="col-span-9 grid grid-cols-2 gap-6 h-full">
                 <div class="bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg p-6 transition-colors duration-200">
                     <h3 id="original-image-heading" class="text-lg font-bold mb-4 text-white">Original Image</h3>
                     <div 
