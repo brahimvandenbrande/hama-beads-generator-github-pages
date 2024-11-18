@@ -4,10 +4,12 @@ class ImageProcessor {
         this.availableBeadColors = [
             { name: 'White', r: 255, g: 255, b: 255 },
             { name: 'Cream', r: 255, g: 253, b: 208 },
+            { name: 'Peach', r: 255, g: 218, b: 185 },
+            { name: 'Light Pink', r: 255, g: 182, b: 193 },
+            { name: 'Pink', r: 255, g: 192, b: 203 },
             { name: 'Yellow', r: 255, g: 255, b: 0 },
             { name: 'Orange', r: 255, g: 128, b: 0 },
             { name: 'Red', r: 255, g: 0, b: 0 },
-            { name: 'Pink', r: 255, g: 192, b: 203 },
             { name: 'Purple', r: 128, g: 0, b: 128 },
             { name: 'Dark Blue', r: 0, g: 0, b: 139 },
             { name: 'Blue', r: 0, g: 0, b: 255 },
@@ -15,10 +17,428 @@ class ImageProcessor {
             { name: 'Green', r: 0, g: 255, b: 0 },
             { name: 'Dark Green', r: 0, g: 100, b: 0 },
             { name: 'Brown', r: 139, g: 69, b: 19 },
+            { name: 'Light Brown', r: 205, g: 133, b: 63 },
             { name: 'Light Grey', r: 192, g: 192, b: 192 },
             { name: 'Grey', r: 128, g: 128, b: 128 },
             { name: 'Black', r: 0, g: 0, b: 0 }
         ];
+
+        // Define skin tone ranges (in HSV color space)
+        this.skinToneRanges = [
+            // Light skin
+            { hMin: 0, hMax: 50, sMin: 0.1, sMax: 0.6, vMin: 0.5, vMax: 1.0 },
+            // Medium skin
+            { hMin: 0, hMax: 35, sMin: 0.2, sMax: 0.7, vMin: 0.4, vMax: 0.9 },
+            // Dark skin
+            { hMin: 0, hMax: 40, sMin: 0.15, sMax: 0.8, vMin: 0.2, vMax: 0.8 }
+        ];
+
+        // Eye color characteristics
+        this.eyeCharacteristics = {
+            // Dark eyes (brown, dark blue, etc.)
+            dark: {
+                luminanceMax: 0.3,
+                saturationMin: 0.2
+            },
+            // Light eyes (blue, green, etc.)
+            light: {
+                luminanceMin: 0.3,
+                saturationMin: 0.3
+            },
+            // White of the eye
+            sclera: {
+                luminanceMin: 0.8,
+                saturationMax: 0.2
+            }
+        };
+    }
+
+    detectEyeRegions(imageData, faceMask) {
+        const { width, height } = imageData;
+        const data = imageData.data;
+        const eyeMask = new Uint8Array(width * height);
+        
+        // Only search for eyes in the upper half of face regions
+        const faceTop = Math.floor(height * 0.2);
+        const faceBottom = Math.floor(height * 0.5);
+        
+        // Sliding window parameters for eye detection
+        const windowSize = Math.floor(width * 0.1); // Approximate eye size
+        const stride = Math.floor(windowSize / 2);
+        
+        for (let y = faceTop; y < faceBottom; y += stride) {
+            for (let x = 0; x < width - windowSize; x += stride) {
+                if (!this.isInFaceRegion(x, y, faceMask, width)) continue;
+                
+                const isEye = this.analyzeWindowForEye(
+                    data, 
+                    x, y, 
+                    windowSize, 
+                    width, 
+                    height
+                );
+                
+                if (isEye) {
+                    this.markEyeRegion(eyeMask, x, y, windowSize, width);
+                }
+            }
+        }
+        
+        return eyeMask;
+    }
+
+    isInFaceRegion(x, y, faceMask, width) {
+        const idx = y * width + x;
+        return faceMask[idx] === 1;
+    }
+
+    analyzeWindowForEye(data, startX, startY, windowSize, width, height) {
+        let darkPixels = 0;
+        let lightPixels = 0;
+        let totalPixels = 0;
+        
+        // Count dark and light pixels in the window
+        for (let y = startY; y < Math.min(startY + windowSize, height); y++) {
+            for (let x = startX; x < Math.min(startX + windowSize, width); x++) {
+                const idx = (y * width + x) * 4;
+                const r = data[idx];
+                const g = data[idx + 1];
+                const b = data[idx + 2];
+                
+                const luminance = this.getLuminance(r, g, b);
+                const saturation = this.getSaturation(r, g, b);
+                
+                if (this.isEyePixel(luminance, saturation)) {
+                    darkPixels++;
+                } else if (this.isScleraPixel(luminance, saturation)) {
+                    lightPixels++;
+                }
+                totalPixels++;
+            }
+        }
+        
+        // Check if the pattern matches eye characteristics
+        const darkRatio = darkPixels / totalPixels;
+        const lightRatio = lightPixels / totalPixels;
+        
+        return darkRatio > 0.15 && lightRatio > 0.2;
+    }
+
+    markEyeRegion(eyeMask, x, y, windowSize, width) {
+        // Mark the detected eye region and a small border around it
+        const border = Math.floor(windowSize * 0.2);
+        for (let dy = -border; dy < windowSize + border; dy++) {
+            for (let dx = -border; dx < windowSize + border; dx++) {
+                const idx = (y + dy) * width + (x + dx);
+                if (idx >= 0 && idx < eyeMask.length) {
+                    eyeMask[idx] = 1;
+                }
+            }
+        }
+    }
+
+    getLuminance(r, g, b) {
+        // Convert RGB to relative luminance
+        return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    }
+
+    getSaturation(r, g, b) {
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        return max === 0 ? 0 : (max - min) / max;
+    }
+
+    isEyePixel(luminance, saturation) {
+        // Check if pixel matches eye characteristics (iris/pupil)
+        return (
+            (luminance <= this.eyeCharacteristics.dark.luminanceMax && 
+             saturation >= this.eyeCharacteristics.dark.saturationMin) ||
+            (luminance >= this.eyeCharacteristics.light.luminanceMin && 
+             saturation >= this.eyeCharacteristics.light.saturationMin)
+        );
+    }
+
+    isScleraPixel(luminance, saturation) {
+        // Check if pixel matches sclera (white of eye) characteristics
+        return (
+            luminance >= this.eyeCharacteristics.sclera.luminanceMin && 
+            saturation <= this.eyeCharacteristics.sclera.saturationMax
+        );
+    }
+
+    createOptimizedPalette(imageData, numColors) {
+        const { width, height } = imageData;
+        const data = imageData.data;
+        
+        if (numColors === 2) {
+            return ['Black', 'White'];
+        }
+
+        // Detect subject and face regions
+        const edges = this.detectEdges(data, width, height);
+        const subjectMask = this.identifySubject(edges, width, height);
+        const { faceMask, isFace } = this.detectFaceRegion(imageData, subjectMask);
+        
+        // If it's a face, also detect eyes
+        const eyeMask = isFace ? this.detectEyeRegions(imageData, faceMask) : null;
+
+        const colorMap = new Map();
+        const subjectColorMap = new Map();
+        const faceColorMap = new Map();
+        const eyeColorMap = new Map();
+
+        // Collect colors separately for eyes, face, subject, and background
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const key = `${r},${g},${b}`;
+            
+            if (isFace && eyeMask && eyeMask[i/4]) {
+                // Eye colors get highest weight
+                eyeColorMap.set(key, (eyeColorMap.get(key) || 0) + 8);
+            } else if (isFace && faceMask[i/4]) {
+                // Face colors get high weight
+                faceColorMap.set(key, (faceColorMap.get(key) || 0) + 5);
+            } else if (subjectMask[i/4]) {
+                // Subject colors get medium weight
+                subjectColorMap.set(key, (subjectColorMap.get(key) || 0) + 3);
+            } else {
+                // Background colors get lowest weight
+                colorMap.set(key, (colorMap.get(key) || 0) + 1);
+            }
+        }
+
+        const mapToColors = map => Array.from(map.entries())
+            .map(([key, count]) => {
+                const [r, g, b] = key.split(',').map(Number);
+                return { r, g, b, count };
+            });
+
+        // Convert color maps to arrays
+        const eyeColors = mapToColors(eyeColorMap);
+        const faceColors = mapToColors(faceColorMap);
+        const subjectColors = mapToColors(subjectColorMap);
+        const backgroundColors = mapToColors(colorMap);
+
+        // Allocate colors based on content
+        let eyeColorCount = 0;
+        let faceColorCount = 0;
+        let subjectColorCount = 0;
+        let backgroundColorCount = 0;
+
+        if (isFace && eyeColors.length > 0) {
+            // If face with eyes detected, prioritize eyes
+            eyeColorCount = Math.ceil(numColors * 0.3);
+            faceColorCount = Math.ceil(numColors * 0.3);
+            subjectColorCount = Math.ceil(numColors * 0.25);
+            backgroundColorCount = numColors - eyeColorCount - faceColorCount - subjectColorCount;
+        } else if (isFace) {
+            // If face without clear eyes detected
+            faceColorCount = Math.ceil(numColors * 0.4);
+            subjectColorCount = Math.ceil(numColors * 0.4);
+            backgroundColorCount = numColors - faceColorCount - subjectColorCount;
+        } else {
+            // Otherwise, maintain previous distribution
+            subjectColorCount = Math.ceil(numColors * 0.7);
+            backgroundColorCount = numColors - subjectColorCount;
+        }
+
+        // Cluster colors separately
+        const eyeClusters = eyeColorCount > 0 ? this.clusterColors(eyeColors, eyeColorCount) : [];
+        const faceClusters = faceColorCount > 0 ? this.clusterColors(faceColors, faceColorCount) : [];
+        const subjectClusters = this.clusterColors(subjectColors, subjectColorCount);
+        const backgroundClusters = this.clusterColors(backgroundColors, backgroundColorCount);
+
+        // Combine clusters and convert to bead colors
+        const allClusters = [...eyeClusters, ...faceClusters, ...subjectClusters, ...backgroundClusters];
+        
+        return allClusters.map(cluster => {
+            const avgColor = this.getClusterAverage(cluster);
+            
+            // Special handling for eye colors
+            if (eyeColors.length > 0 && this.isEyePixel(
+                this.getLuminance(avgColor.r, avgColor.g, avgColor.b),
+                this.getSaturation(avgColor.r, avgColor.g, avgColor.b)
+            )) {
+                return this.findClosestEyeColor(avgColor);
+            }
+            
+            // Use perceptual matching for skin tones
+            if (this.isSkinTone(avgColor.r, avgColor.g, avgColor.b)) {
+                return this.findClosestSkinToneBeadColor(avgColor);
+            }
+            
+            return this.findClosestBeadColor(avgColor);
+        });
+    }
+
+    findClosestEyeColor(color) {
+        const luminance = this.getLuminance(color.r, color.g, color.b);
+        const saturation = this.getSaturation(color.r, color.g, color.b);
+        
+        // For sclera (white of eye), prefer white or cream
+        if (this.isScleraPixel(luminance, saturation)) {
+            const scleraColors = ['White', 'Cream'];
+            return this.findClosestFromSet(color, scleraColors);
+        }
+        
+        // For dark eyes, prefer darker colors
+        if (luminance <= this.eyeCharacteristics.dark.luminanceMax) {
+            const darkEyeColors = ['Black', 'Dark Blue', 'Brown', 'Dark Green'];
+            return this.findClosestFromSet(color, darkEyeColors);
+        }
+        
+        // For light eyes, prefer brighter colors
+        const lightEyeColors = ['Blue', 'Light Blue', 'Green', 'Light Brown'];
+        return this.findClosestFromSet(color, lightEyeColors);
+    }
+
+    findClosestFromSet(color, colorSet) {
+        return this.availableBeadColors
+            .filter(bead => colorSet.includes(bead.name))
+            .reduce((closest, beadColor) => {
+                const distance = this.colorDistance(
+                    color.r, color.g, color.b,
+                    beadColor.r, beadColor.g, beadColor.b
+                );
+                if (distance < closest.distance) {
+                    return { ...beadColor, distance };
+                }
+                return closest;
+            }, { distance: Infinity }).name;
+    }
+
+    rgbToHsv(r, g, b) {
+        r /= 255;
+        g /= 255;
+        b /= 255;
+
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const diff = max - min;
+
+        let h = 0;
+        if (diff === 0) {
+            h = 0;
+        } else if (max === r) {
+            h = ((g - b) / diff) % 6;
+        } else if (max === g) {
+            h = (b - r) / diff + 2;
+        } else {
+            h = (r - g) / diff + 4;
+        }
+
+        h = Math.round(h * 60);
+        if (h < 0) h += 360;
+
+        const s = max === 0 ? 0 : diff / max;
+        const v = max;
+
+        return { h, s, v };
+    }
+
+    isSkinTone(r, g, b) {
+        const hsv = this.rgbToHsv(r, g, b);
+        return this.skinToneRanges.some(range => 
+            hsv.h >= range.hMin && 
+            hsv.h <= range.hMax && 
+            hsv.s >= range.sMin && 
+            hsv.s <= range.sMax && 
+            hsv.v >= range.vMin && 
+            hsv.v <= range.vMax
+        );
+    }
+
+    detectFaceRegion(imageData, subjectMask) {
+        const { width, height } = imageData;
+        const data = imageData.data;
+        const faceMask = new Uint8Array(width * height);
+        
+        // Count skin tone pixels in subject area
+        let skinToneCount = 0;
+        let totalPixels = 0;
+
+        for (let i = 0; i < data.length; i += 4) {
+            if (subjectMask[i/4]) {
+                totalPixels++;
+                if (this.isSkinTone(data[i], data[i + 1], data[i + 2])) {
+                    skinToneCount++;
+                    faceMask[i/4] = 1;
+                }
+            }
+        }
+
+        // If significant portion is skin tone, consider it a face
+        const skinToneRatio = skinToneCount / totalPixels;
+        const isFace = skinToneRatio > 0.15; // If more than 15% is skin tone
+
+        return { faceMask, isFace };
+    }
+
+    findClosestSkinToneBeadColor(color) {
+        // Define skin tone bead colors to choose from
+        const skinToneBeads = ['Peach', 'Light Pink', 'Cream', 'Light Brown', 'Brown'];
+        
+        return this.availableBeadColors
+            .filter(bead => skinToneBeads.includes(bead.name))
+            .reduce((closest, beadColor) => {
+                const distance = this.colorDistance(
+                    color.r, color.g, color.b,
+                    beadColor.r, beadColor.g, beadColor.b
+                );
+                if (distance < closest.distance) {
+                    return { ...beadColor, distance };
+                }
+                return closest;
+            }, { distance: Infinity }).name;
+    }
+
+    colorDistance(r1, g1, b1, r2, g2, b2) {
+        // Using CIEDE2000 color difference formula for better skin tone matching
+        const lab1 = this.rgbToLab(r1, g1, b1);
+        const lab2 = this.rgbToLab(r2, g2, b2);
+        
+        // Weighted components for better skin tone matching
+        const dl = lab1.l - lab2.l;
+        const da = lab1.a - lab2.a;
+        const db = lab1.b - lab2.b;
+        
+        // Higher weight for a* (red-green) component which is important for skin tones
+        return Math.sqrt(
+            dl * dl * 1.0 +
+            da * da * 1.5 + // Higher weight for red-green
+            db * db * 1.0
+        );
+    }
+
+    rgbToLab(r, g, b) {
+        // Convert RGB to CIE L*a*b* color space for better perceptual matching
+        r /= 255;
+        g /= 255;
+        b /= 255;
+
+        r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
+        g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
+        b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
+
+        let x = (r * 0.4124 + g * 0.3576 + b * 0.1805) * 100;
+        let y = (r * 0.2126 + g * 0.7152 + b * 0.0722) * 100;
+        let z = (r * 0.0193 + g * 0.1192 + b * 0.9505) * 100;
+
+        x /= 95.047;
+        y /= 100.000;
+        z /= 108.883;
+
+        x = x > 0.008856 ? Math.pow(x, 1/3) : (7.787 * x) + 16/116;
+        y = y > 0.008856 ? Math.pow(y, 1/3) : (7.787 * y) + 16/116;
+        z = z > 0.008856 ? Math.pow(z, 1/3) : (7.787 * z) + 16/116;
+
+        return {
+            l: (116 * y) - 16,
+            a: 500 * (x - y),
+            b: 200 * (y - z)
+        };
     }
 
     async processImage(file, width, height, options = {}) {
@@ -129,66 +549,6 @@ class ImageProcessor {
             case 'standard':
             default: return 12;
         }
-    }
-
-    createOptimizedPalette(imageData, numColors) {
-        const { width, height } = imageData;
-        const data = imageData.data;
-        
-        // Special handling for black and white mode
-        if (numColors === 2) {
-            return ['Black', 'White'];
-        }
-
-        // Detect subject area
-        const edges = this.detectEdges(data, width, height);
-        const subjectMask = this.identifySubject(edges, width, height);
-
-        const colorMap = new Map();
-        const subjectColorMap = new Map();
-
-        // Collect colors separately for subject and background
-        for (let i = 0; i < data.length; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-            const key = `${r},${g},${b}`;
-            
-            if (subjectMask[i/4]) {
-                // Subject colors get higher weight
-                subjectColorMap.set(key, (subjectColorMap.get(key) || 0) + 3);
-            } else {
-                colorMap.set(key, (colorMap.get(key) || 0) + 1);
-            }
-        }
-
-        // Combine colors, giving priority to subject colors
-        const subjectColors = Array.from(subjectColorMap.entries())
-            .map(([key, count]) => {
-                const [r, g, b] = key.split(',').map(Number);
-                return { r, g, b, count };
-            });
-
-        const backgroundColors = Array.from(colorMap.entries())
-            .map(([key, count]) => {
-                const [r, g, b] = key.split(',').map(Number);
-                return { r, g, b, count };
-            });
-
-        // Allocate more colors to the subject
-        const subjectColorCount = Math.ceil(numColors * 0.7);
-        const backgroundColorCount = numColors - subjectColorCount;
-
-        // Cluster colors separately for subject and background
-        const subjectClusters = this.clusterColors(subjectColors, subjectColorCount);
-        const backgroundClusters = this.clusterColors(backgroundColors, backgroundColorCount);
-
-        // Combine and convert to bead colors
-        const allClusters = [...subjectClusters, ...backgroundClusters];
-        return allClusters.map(cluster => {
-            const avgColor = this.getClusterAverage(cluster);
-            return this.findClosestBeadColor(avgColor);
-        });
     }
 
     clusterColors(colors, numClusters) {
@@ -462,25 +822,6 @@ class ImageProcessor {
         // Filter out unused colors
         return Object.fromEntries(
             Object.entries(colorCounts).filter(([_, count]) => count > 0)
-        );
-    }
-
-    colorDistance(r1, g1, b1, r2, g2, b2) {
-        // Using weighted Euclidean distance for better perceptual color matching
-        const rMean = (r1 + r2) / 2;
-        const dr = r1 - r2;
-        const dg = g1 - g2;
-        const db = b1 - b2;
-        
-        // Weights based on human perception
-        const weightR = 2 + rMean / 256;
-        const weightG = 4.0;
-        const weightB = 2 + (255 - rMean) / 256;
-        
-        return Math.sqrt(
-            weightR * dr * dr +
-            weightG * dg * dg +
-            weightB * db * db
         );
     }
 
